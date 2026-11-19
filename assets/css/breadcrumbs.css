@@ -1,0 +1,148 @@
+/**
+ * Breadcrumbs
+ *
+ * A trail in a line, the same in wp-admin and on a theme. Everything is
+ * relative to the text around it: sizes in em, colours from currentColor
+ * and the context's own link colour, so a trail sits in a dark theme, a
+ * coloured header or an admin notice without a rule of its own. The one
+ * colour named is core's admin theme colour for the focus ring, with the
+ * text colour where there is no admin.
+ *
+ * Directions are logical: nothing here says left or right. The default
+ * separator, U+203A, is a Unicode mirrored character, so a right-to-left
+ * page draws it pointing the other way by itself -- flipping it here as
+ * well would point it back.
+ *
+ * Every rule is under `.sugarcommerce-breadcrumbs--styled`, which only a
+ * trail that loads this stylesheet carries: one that opted out is left
+ * alone even on a page where another trail loaded it. A trail given a nav
+ * class of its own keeps the look; parts given classes of their own are
+ * the caller's to style.
+ *
+ * Tune it without overriding a rule:
+ *
+ *   --sugarcommerce-breadcrumbs-gap         between a separator and a crumb (.5em)
+ *   --sugarcommerce-breadcrumbs-icon-size   an icon's box (1.15em)
+ *   --sugarcommerce-breadcrumbs-crumb-width where a long crumb is cut (22em)
+ */
+
+.sugarcommerce-breadcrumbs--styled {
+	--sugarcommerce-breadcrumbs-gap: .5em;
+	--sugarcommerce-breadcrumbs-icon-size: 1.15em;
+	--sugarcommerce-breadcrumbs-crumb-width: 22em;
+
+	min-width: 0;
+}
+
+/* Core's admin styles give an ol a decimal marker, a 2em margin and a 6px
+   gap under every li; a theme gives it whatever it likes. */
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__list {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: .25em var(--sugarcommerce-breadcrumbs-gap);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__item {
+	display: flex;
+	align-items: center;
+	gap: var(--sugarcommerce-breadcrumbs-gap);
+	min-width: 0;
+	max-width: min(var(--sugarcommerce-breadcrumbs-crumb-width), 100%);
+	margin: 0;
+	padding: 0;
+}
+
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__item::before,
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__item::marker {
+	content: none;
+}
+
+/* Centred on the label's line, and quieter than it. */
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__separator {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	line-height: 1;
+	opacity: .55;
+	user-select: none;
+}
+
+/* The link, or the plain text of a crumb without one: icon and label,
+   spaced by a gap rather than a space, so nothing underlines the gap. */
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__crumb {
+	display: inline-flex;
+	align-items: center;
+	gap: .35em;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.sugarcommerce-breadcrumbs--styled a.sugarcommerce-breadcrumbs__crumb {
+	border-radius: 2px;
+	box-shadow: none;
+	text-decoration: none;
+}
+
+/* Underlined on hover and focus, the label only. */
+.sugarcommerce-breadcrumbs--styled a.sugarcommerce-breadcrumbs__crumb:hover .sugarcommerce-breadcrumbs__label,
+.sugarcommerce-breadcrumbs--styled a.sugarcommerce-breadcrumbs__crumb:focus-visible .sugarcommerce-breadcrumbs__label {
+	text-decoration: underline;
+	text-underline-offset: .2em;
+}
+
+/* An outline rather than core's box-shadow ring: it is drawn in forced
+   colours, where a shadow is not. */
+.sugarcommerce-breadcrumbs--styled a.sugarcommerce-breadcrumbs__crumb:focus-visible {
+	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, currentColor);
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+/* A long crumb is cut with an ellipsis; the label's title keeps the whole
+   text, so nothing is lost without a way to read it. */
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__label {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__item--active {
+	color: inherit;
+	font-weight: 500;
+}
+
+/* One box for every kind of icon -- the Dashicons font, an SVG from an
+   icon set, or the caller's own markup -- centred on the label. The font
+   size is the box, so a Dashicon's glyph fills it exactly; an SVG or an
+   image inside the caller's markup is fitted to it. */
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__icon {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 1em;
+	height: 1em;
+	font-size: var(--sugarcommerce-breadcrumbs-icon-size);
+	line-height: 1;
+	vertical-align: middle;
+}
+
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__icon::before {
+	width: auto;
+	height: auto;
+	font-size: inherit;
+	line-height: 1;
+}
+
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__icon > svg,
+.sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__icon > img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}

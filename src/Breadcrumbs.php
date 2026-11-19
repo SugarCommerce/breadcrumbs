@@ -13,6 +13,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Breadcrumbs;
 
 use JsonSerializable;
+use SugarCommerce\Plugin\Assets;
 use Stringable;
 
 /**
@@ -30,6 +31,10 @@ use Stringable;
  * Icons: a Dashicons name is drawn here, as core's font span. A `set:name`
  * icon (`heroicons-outline:home`) needs something that can draw it, given
  * as the `icons` callable -- this library carries no icon set.
+ *
+ * The package's stylesheet lays the trail out in a line, the same in
+ * wp-admin and on a theme, and is enqueued by the first trail that renders.
+ * `'stylesheet' => false` leaves the look entirely to the caller.
  */
 class Breadcrumbs implements JsonSerializable, Stringable {
 
@@ -103,9 +108,39 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	private $icons = null;
 
 	/**
-	 * The class every drawn icon carries, so one rule sizes either kind.
+	 * Whether rendering loads the package's stylesheet.
+	 *
+	 * @var bool
+	 */
+	private bool $stylesheet;
+
+	/**
+	 * The class every drawn icon carries, so one rule sizes any kind.
 	 */
 	public const ICON_CLASS = 'sugarcommerce-breadcrumbs__icon';
+
+	/**
+	 * The class of a crumb's icon-and-label pair: the link, or the plain
+	 * text of a crumb that has no link.
+	 */
+	public const CRUMB_CLASS = 'sugarcommerce-breadcrumbs__crumb';
+
+	/**
+	 * The class of a crumb's label, the only part a link underlines.
+	 */
+	public const LABEL_CLASS = 'sugarcommerce-breadcrumbs__label';
+
+	/**
+	 * The class a trail carries when it loads the stylesheet, and the root
+	 * of every rule in it: a trail that opted out is left alone even on a
+	 * page where another trail loaded the stylesheet.
+	 */
+	public const STYLED_CLASS = 'sugarcommerce-breadcrumbs--styled';
+
+	/**
+	 * The stylesheet, within the package's assets folder.
+	 */
+	private const STYLESHEET = 'css/breadcrumbs.css';
 
 	/**
 	 * Default configuration values.
@@ -121,14 +156,16 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 		'separator_class' => 'sugarcommerce-breadcrumbs__separator',
 		'active_class'    => 'sugarcommerce-breadcrumbs__item--active',
 		'icons'           => null,
+		'stylesheet'      => true,
 	];
 
 	/**
 	 * Create a new Breadcrumbs instance.
 	 *
 	 * @param array<string, mixed> $config Optional configuration overrides: `separator`,
-	 *                                     `aria_label`, the five classes, and `icons`
-	 *                                     (see icons()).
+	 *                                     `aria_label`, the five classes, `icons`
+	 *                                     (see icons()) and `stylesheet` (see
+	 *                                     stylesheet()).
 	 */
 	public function __construct( array $config = [] ) {
 		$config = array_merge( self::$defaults, $config );
@@ -141,6 +178,7 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 		$this->separator_class = (string) $config['separator_class'];
 		$this->active_class    = (string) $config['active_class'];
 		$this->icons           = is_callable( $config['icons'] ) ? $config['icons'] : null;
+		$this->stylesheet      = (bool) $config['stylesheet'];
 	}
 
 	/**
@@ -366,6 +404,26 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	}
 
 	/**
+	 * Whether rendering loads the package's stylesheet.
+	 *
+	 * On by default. Off, the trail is bare markup -- an ordered list -- for
+	 * a plugin or theme that styles it itself: it does not load the
+	 * stylesheet, and it does not carry STYLED_CLASS, so it is left alone on
+	 * a page where another trail did load it. The stylesheet styles the
+	 * default class names of the list, items and separator; parts given
+	 * classes of their own are their caller's to style.
+	 *
+	 * @param bool $load Whether to load it.
+	 *
+	 * @return static Self for chaining.
+	 */
+	public function stylesheet( bool $load ): static {
+		$this->stylesheet = $load;
+
+		return $this;
+	}
+
+	/**
 	 * Set the CSS class for the active item.
 	 *
 	 * @param string $name The CSS class.
@@ -455,30 +513,66 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 			return '';
 		}
 
+		if ( $this->stylesheet ) {
+			$this->enqueue();
+		}
+
 		$items_html = [];
 		$total      = count( $this->items );
 
 		foreach ( $this->items as $index => $item ) {
-			$is_last   = ( $index === $total - 1 );
-			$position = $index + 1;
-
 			// Only the last crumb is the page you are on. One in the middle
 			// without a URL is a step with no page of its own: plain text,
 			// not a second "current page".
-			$items_html[] = $this->render_item( $item, $position, $is_last );
-
-			if ( ! $is_last ) {
-				$items_html[] = $this->render_separator();
-			}
+			$items_html[] = $this->render_item( $item, $index + 1, $index === $total - 1 );
 		}
 
 		return sprintf(
 			'<nav class="%s" aria-label="%s"><ol class="%s" itemscope itemtype="https://schema.org/BreadcrumbList">%s</ol></nav>',
-			esc_attr( $this->nav_class ),
+			esc_attr( trim( $this->nav_class . ( $this->stylesheet ? ' ' . self::STYLED_CLASS : '' ) ) ),
 			esc_attr( $this->aria_label ),
 			esc_attr( $this->list_class ),
 			implode( '', $items_html )
 		);
+	}
+
+	/**
+	 * Load the stylesheet.
+	 *
+	 * render() does this itself unless the trail opted out. Call it early
+	 * to have the stylesheet in the head rather than printed late.
+	 *
+	 * @return void
+	 */
+	public function enqueue(): void {
+		if ( ! function_exists( 'wp_enqueue_style' ) ) {
+			return;
+		}
+
+		$handle = self::handle();
+
+		if ( ! wp_style_is( $handle, 'registered' ) && ! Assets::register_style( $handle, __FILE__, self::STYLESHEET ) ) {
+			return;
+		}
+
+		wp_enqueue_style( $handle );
+	}
+
+	/**
+	 * The stylesheet handle for this copy of the library.
+	 *
+	 * Derived from the namespace rather than written as a literal, because
+	 * Strauss renames namespaces and does not rename strings: two plugins
+	 * each bundling a prefixed copy would otherwise share one handle, and
+	 * whichever registered first would decide the other's CSS.
+	 *
+	 * @return string `sugarcommerce-breadcrumbs`, or e.g.
+	 *                `myplugin-lib-breadcrumbs` once prefixed.
+	 */
+	public static function handle(): string {
+		$root = substr( __NAMESPACE__, 0, (int) strrpos( __NAMESPACE__, '\\' ) );
+
+		return trim( strtolower( (string) preg_replace( '/[^A-Za-z0-9]+/', '-', $root ) ), '-' ) . '-breadcrumbs';
 	}
 
 	/**
@@ -536,6 +630,16 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	/**
 	 * Render a single breadcrumb item.
 	 *
+	 *     <li …><span separator aria-hidden>›</span><a crumb><icon/><span label>Orders</span></a><meta position></li>
+	 *
+	 * The separator sits inside the crumb it leads to, so the list holds
+	 * only crumbs -- a screen reader counts three, not five -- and a trail
+	 * that wraps starts its new line with "› Orders", not ends the old one
+	 * with a dangling "›". The icon and the label are separate elements with
+	 * no space between them: the gap is the stylesheet's, so a link's
+	 * underline never runs under the icon. The label carries its full text
+	 * as a title, because the stylesheet cuts a long one short.
+	 *
 	 * @param Item $item     The breadcrumb item.
 	 * @param int  $position The position (1-based) for Schema.org.
 	 * @param bool $active   Whether this is the active/current item.
@@ -548,33 +652,32 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 			$classes .= ' ' . $this->active_class;
 		}
 
-		$extra_attrs = self::build_attributes( $item->attributes() );
-
-		$icon_html = '';
-		if ( $item->has_icon() ) {
-			$icon_html = $this->render_icon( (string) $item->icon() );
-		}
+		$icon_html = $item->has_icon() ? $this->render_icon( (string) $item->icon() ) : '';
+		$label     = sprintf(
+			'<span class="%1$s" itemprop="name" title="%2$s">%3$s</span>',
+			self::LABEL_CLASS,
+			esc_attr( $item->label() ),
+			esc_html( $item->label() )
+		);
 
 		if ( $item->is_link() && ! $active ) {
 			$inner = sprintf(
-				'<a href="%s" itemprop="item">%s<span itemprop="name">%s</span></a>',
+				'<a class="%s" href="%s" itemprop="item">%s%s</a>',
+				self::CRUMB_CLASS,
 				esc_url( $item->url() ),
 				$icon_html,
-				esc_html( $item->label() )
+				$label
 			);
 		} else {
-			$inner = sprintf(
-				'%s<span itemprop="name">%s</span>',
-				$icon_html,
-				esc_html( $item->label() )
-			);
+			$inner = sprintf( '<span class="%s">%s%s</span>', self::CRUMB_CLASS, $icon_html, $label );
 		}
 
 		return sprintf(
-			'<li class="%s" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"%s%s>%s<meta itemprop="position" content="%d"></li>',
+			'<li class="%s" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"%s%s>%s%s<meta itemprop="position" content="%d"></li>',
 			esc_attr( $classes ),
 			$active ? ' aria-current="page"' : '',
-			$extra_attrs,
+			self::build_attributes( $item->attributes() ),
+			$position > 1 ? $this->render_separator() : '',
 			$inner,
 			$position
 		);
@@ -587,7 +690,7 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	 */
 	protected function render_separator(): string {
 		return sprintf(
-			'<li class="%s" aria-hidden="true">%s</li>',
+			'<span class="%s" aria-hidden="true">%s</span>',
 			esc_attr( $this->separator_class ),
 			$this->separator
 		);
@@ -600,7 +703,9 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	 * (`admin-home`) or the whole class (`dashicons-admin-home`) -- is drawn
 	 * by icon(). Anything starting `dashicons-` counts as a name even when it
 	 * is not a valid one, so it is never printed raw. Everything else is the
-	 * caller's own markup, as it always was.
+	 * caller's own markup, printed as given inside a decorative span with
+	 * the icon class, so it is sized and centred like the others and kept
+	 * from screen readers: the label beside it says what the crumb is.
 	 *
 	 * @param string $icon Icon name or HTML.
 	 *
@@ -610,22 +715,20 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 		$value = trim( $icon );
 
 		if ( ! str_starts_with( $value, 'dashicons-' ) && 1 !== preg_match( self::ICON_NAME, $value ) ) {
-			return $icon . ' ';
+			return '' === $value ? '' : sprintf( '<span class="%s" aria-hidden="true">%s</span>', self::ICON_CLASS, $icon );
 		}
 
-		$drawn = $this->icon( $value );
-
-		return '' === $drawn ? '' : $drawn . ' ';
+		return $this->icon( $value );
 	}
 
 	/**
 	 * Draw a named icon.
 	 *
 	 * A `set:name` icon goes to the `icons` callable, given the class and
-	 * core's `.dashicons` alignment (`vertical-align: top`) inline, since
-	 * this library has no stylesheet and an SVG on the baseline pushes the
-	 * label down; with no callable it draws nothing. A Dashicons name is
-	 * the font's span, drawn here.
+	 * core's `.dashicons` alignment (`vertical-align: top`) inline, so a
+	 * trail without the stylesheet does not sit an SVG on the baseline and
+	 * push the label down; with no callable it draws nothing. A Dashicons
+	 * name is the font's span, drawn here.
 	 *
 	 * @param string $value Icon name.
 	 *
