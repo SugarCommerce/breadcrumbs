@@ -97,18 +97,21 @@
 /* An outline rather than core's box-shadow ring: it is drawn in forced
    colours, where a shadow is not. */
 .sugarcommerce-breadcrumbs--styled a.sugarcommerce-breadcrumbs__crumb:focus-visible {
-	outline: var(--wp-admin-border-width-focus, 2px) solid var(--wp-admin-theme-color, currentColor);
+	outline: 2px solid var(--wp-admin-theme-color, currentColor);
 	outline-offset: 2px;
 	box-shadow: none;
 }
 
 /* A long crumb is cut with an ellipsis; the label's title keeps the whole
-   text, so nothing is lost without a way to read it. */
+   text, so nothing is lost without a way to read it. Each label takes its
+   direction from its own text, so an English file name on an Arabic page
+   is cut at its own end, not its beginning. */
 .sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__label {
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	unicode-bidi: plaintext;
 }
 
 .sugarcommerce-breadcrumbs--styled .sugarcommerce-breadcrumbs__item--active {

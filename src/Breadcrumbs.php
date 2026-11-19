@@ -752,6 +752,12 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 			return '';
 		}
 
+		// Core loads the font in wp-admin and with the admin bar; a visitor
+		// to a theme has neither, and the span would draw nothing.
+		if ( function_exists( 'wp_enqueue_style' ) ) {
+			wp_enqueue_style( 'dashicons' );
+		}
+
 		return sprintf(
 			'<span class="dashicons dashicons-%s %s" aria-hidden="true"></span>',
 			esc_attr( $name ),

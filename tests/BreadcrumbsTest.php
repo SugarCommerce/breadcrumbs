@@ -268,6 +268,19 @@ final class BreadcrumbsTest extends TestCase {
 		$this->assertSame( [], $GLOBALS['bc_registered'][ Breadcrumbs::handle() ]['deps'] );
 	}
 
+	/**
+	 * A theme's visitor has no admin bar, so nothing else loads the font.
+	 */
+	public function test_a_dashicon_loads_the_dashicons_font(): void {
+		$this->trail()->stylesheet( false )->add( 'One', '/one', 'heroicons-outline:home' )->add( 'Two', '/two', '<b>x</b>' )->render();
+
+		$this->assertNotContains( 'dashicons', $GLOBALS['bc_enqueued'] );
+
+		$this->trail()->stylesheet( false )->add( 'One', '/one', 'admin-home' )->render();
+
+		$this->assertContains( 'dashicons', $GLOBALS['bc_enqueued'] );
+	}
+
 	public function test_an_empty_trail_loads_nothing(): void {
 		$this->trail()->render();
 
