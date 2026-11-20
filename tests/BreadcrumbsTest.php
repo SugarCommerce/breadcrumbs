@@ -10,7 +10,7 @@ declare( strict_types=1 );
 namespace SugarCommerce\Breadcrumbs\Tests;
 
 use SugarCommerce\Breadcrumbs\Breadcrumbs;
-use SugarCommerce\Breadcrumbs\Item;
+use SugarCommerce\Breadcrumbs\Models\Item;
 use SugarCommerce\Plugin\Assets;
 use DOMDocument;
 use DOMXPath;

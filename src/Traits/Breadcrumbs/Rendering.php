@@ -12,7 +12,7 @@ declare( strict_types=1 );
 
 namespace SugarCommerce\Breadcrumbs\Traits\Breadcrumbs;
 
-use SugarCommerce\Breadcrumbs\Item;
+use SugarCommerce\Breadcrumbs\Models\Item;
 use SugarCommerce\Plugin\Assets;
 
 /**

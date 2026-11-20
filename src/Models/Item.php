@@ -10,7 +10,7 @@
 
 declare( strict_types=1 );
 
-namespace SugarCommerce\Breadcrumbs;
+namespace SugarCommerce\Breadcrumbs\Models;
 
 use JsonSerializable;
 use Stringable;

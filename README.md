@@ -177,7 +177,7 @@ attribute names, or are event handlers, are dropped.
 
 * `src/Breadcrumbs.php`: the trail and its items, with its jobs in
   `src/Traits/Breadcrumbs/` (the markup settings, drawing it).
-* `src/Item.php`: one crumb, a read-only value.
+* `src/Models/Item.php`: one crumb, a read-only value.
 
 ## Requirements
 

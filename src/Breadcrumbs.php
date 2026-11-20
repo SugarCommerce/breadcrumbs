@@ -14,6 +14,7 @@ namespace SugarCommerce\Breadcrumbs;
 
 use JsonSerializable;
 use Stringable;
+use SugarCommerce\Breadcrumbs\Models\Item;
 use SugarCommerce\Breadcrumbs\Traits\Breadcrumbs\Settings;
 use SugarCommerce\Breadcrumbs\Traits\Breadcrumbs\Rendering;
 
