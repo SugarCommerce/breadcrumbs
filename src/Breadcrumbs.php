@@ -17,6 +17,7 @@ use Stringable;
 use SugarCommerce\Breadcrumbs\Models\Item;
 use SugarCommerce\Breadcrumbs\Traits\Breadcrumbs\Settings;
 use SugarCommerce\Breadcrumbs\Traits\Breadcrumbs\Rendering;
+use SugarCommerce\Plugin\Assets;
 
 /**
  * A fluent builder for a breadcrumb trail.
@@ -423,6 +424,7 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	 * Strauss renames namespaces and does not rename strings: two plugins
 	 * each bundling a prefixed copy would otherwise share one handle, and
 	 * whichever registered first would decide the other's CSS.
+	 * sugarcommerce/plugin's Assets::handle() is the rule.
 	 *
 	 * Here, not in a trait: a trait's __NAMESPACE__ is its own.
 	 *
@@ -430,8 +432,6 @@ class Breadcrumbs implements JsonSerializable, Stringable {
 	 *                `myplugin-lib-breadcrumbs` once prefixed.
 	 */
 	public static function handle(): string {
-		$root = substr( __NAMESPACE__, 0, (int) strrpos( __NAMESPACE__, '\\' ) );
-
-		return trim( strtolower( (string) preg_replace( '/[^A-Za-z0-9]+/', '-', $root ) ), '-' ) . '-breadcrumbs';
+		return Assets::handle( __NAMESPACE__, 'breadcrumbs' );
 	}
 }

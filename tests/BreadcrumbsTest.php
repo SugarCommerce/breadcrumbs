@@ -368,8 +368,8 @@ final class BreadcrumbsTest extends TestCase {
 		file_put_contents(
 			$copy,
 			str_replace(
-				[ 'namespace SugarCommerce\\', 'use SugarCommerce\\Plugin\\' ],
-				[ 'namespace ' . $prefix, 'use ' . $prefix . 'Plugin\\' ],
+				[ 'namespace SugarCommerce\\' ],
+				[ 'namespace ' . $prefix ],
 				(string) file_get_contents( dirname( __DIR__ ) . '/src/Breadcrumbs.php' )
 			)
 		);

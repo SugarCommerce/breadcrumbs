@@ -152,8 +152,9 @@ It is then not loaded by that trail, and the trail drops the
 `sugarcommerce-breadcrumbs--styled` class every rule hangs from -- so it stays
 bare even on a page where another trail loaded the stylesheet. A nav class of
 your own keeps the look; a list, item or separator class of your own is yours
-to style. The handle is `Breadcrumbs::handle()`, derived from the namespace so
-each Strauss-prefixed copy registers its own.
+to style. The handle is `Breadcrumbs::handle()`, derived from the namespace by
+`sugarcommerce/plugin`'s `Assets::handle()` so each Strauss-prefixed copy
+registers its own.
 
 ## Configuration
 
