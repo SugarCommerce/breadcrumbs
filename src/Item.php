@@ -18,7 +18,7 @@ use Stringable;
 /**
  * A single breadcrumb, immutable once made.
  */
-final class Item implements JsonSerializable, Stringable {
+final readonly class Item implements JsonSerializable, Stringable {
 
 	/**
 	 * The display label text.
@@ -148,6 +148,7 @@ final class Item implements JsonSerializable, Stringable {
 	 *
 	 * @return string The label text.
 	 */
+	#[\Override]
 	public function __toString(): string {
 		return $this->label;
 	}
@@ -157,6 +158,7 @@ final class Item implements JsonSerializable, Stringable {
 	 *
 	 * @return array Data for JSON encoding.
 	 */
+	#[\Override]
 	public function jsonSerialize(): array {
 		return $this->to_array();
 	}

@@ -163,29 +163,21 @@ translated), `nav_class`, `list_class`, `item_class`, `separator_class`,
 setters of the same names. Extra attributes on an item are escaped, and names that are not
 attribute names, or are event handlers, are dropped.
 
-## Moving from arraypress/wp-*
+## Security
 
-From `arraypress/wp-breadcrumbs` (`ArrayPress\Breadcrumbs`). The global
-functions are gone -- a global function is the one thing Strauss cannot
-prefix -- and it no longer looks for `wp-field-kit`.
+* Script in a crumb: every label, URL, class and attribute is escaped where
+  it is drawn, and a URL refuses `javascript:`.
+* Handlers slipped into attributes: an attribute name is reduced to
+  attribute-name characters, and an `on*` name is dropped.
+* Nothing from the request: the trail is only what the caller adds, never
+  the address or a search term. The separator and an HTML icon are the
+  developer's own markup and are trusted as such.
 
-| Old | New |
-|---|---|
-| `ArrayPress\Breadcrumbs\Breadcrumbs` | `SugarCommerce\Breadcrumbs\Breadcrumbs` |
-| `ArrayPress\Breadcrumbs\Item` | `SugarCommerce\Breadcrumbs\Item` (now `final`) |
-| `create_breadcrumbs( $config )` | `Breadcrumbs::create( $config )` |
-| `render_breadcrumbs( $items, $config )` | `Breadcrumbs::from( $items, $config )->render()` |
-| `display_breadcrumbs( $items, $config )` | `Breadcrumbs::from( $items, $config )->display()` |
-| `set:name` icons drawn by wp-field-kit when installed | drawn by the `icons` callable: pass the kit's `Icons::render` to keep them |
-| classes `arraypress-breadcrumbs`, `arraypress-breadcrumbs__*`, `arraypress-icon` | `sugarcommerce-breadcrumbs`, `sugarcommerce-breadcrumbs__*`, `sugarcommerce-breadcrumbs__icon` |
-| a middle crumb with no URL was a second `aria-current="page"` | plain text; only the last crumb is current |
-| `render_icon()` protected static | protected instance method |
-| separator an `aria-hidden` `<li>` between items | an `aria-hidden` `<span>` inside the crumb it leads to |
-| icon and label separated by a space | separate elements; the link is `__crumb`, the label `__label` with a `title` |
-| no stylesheet | the package's stylesheet, loaded by the first trail; `'stylesheet' => false` to style it yourself |
+## Layout
 
-New: `Breadcrumbs::from()`, `icons()`, `stylesheet()`, `enqueue()`, `handle()`,
-`ICON_CLASS`, `CRUMB_CLASS`, `LABEL_CLASS`, `STYLED_CLASS`.
+* `src/Breadcrumbs.php`: the trail and its items, with its jobs in
+  `src/Traits/Breadcrumbs/` (the markup settings, drawing it).
+* `src/Item.php`: one crumb, a read-only value.
 
 ## Requirements
 
